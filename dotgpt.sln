@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotgpt", "dotgpt\dotgpt.csproj", "{12FFD3E1-6883-4CAB-8B99-011409030AA0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cl-gpta", "cl-gpta\cl-gpta.csproj", "{54564588-927A-4C27-AD0B-B5A6CB16E60D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{D19077FC-D2FF-4ED1-A0C2-42326C842546}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{F0802AA9-22F0-4E24-A161-465F5C4BC6CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12FFD3E1-6883-4CAB-8B99-011409030AA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12FFD3E1-6883-4CAB-8B99-011409030AA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12FFD3E1-6883-4CAB-8B99-011409030AA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12FFD3E1-6883-4CAB-8B99-011409030AA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{12FFD3E1-6883-4CAB-8B99-011409030AA0} = {F0802AA9-22F0-4E24-A161-465F5C4BC6CF}
+		{54564588-927A-4C27-AD0B-B5A6CB16E60D} = {D19077FC-D2FF-4ED1-A0C2-42326C842546}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0D8DF0A2-8F04-4366-9219-0AF7EBDC3B94}
+	EndGlobalSection
+EndGlobal
