@@ -44,7 +44,7 @@ When in the prompt, type 'exit', 'quit' or 'q' to leave.
 # `dotgpt.OpenAI.Chat.Session`
 This is a straightforward C# class that facilitates communication with Open AI's chat completion API. The class leverages an event stream to efficiently receive tokens as they get generated.
 
-## How to use in your
+## How to use in your code
 ```CSharp
     string apiKey = "{YOUR-API-KEY}";
     dotgpt.OpenAI.Chat.Session session = new dotgpt.OpenAI.Chat.Session(apiKey)
