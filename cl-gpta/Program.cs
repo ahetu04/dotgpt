@@ -173,14 +173,29 @@ namespace dotgpt.gpta
             Console.WriteLine("gpta -profile:[PROFILE-NAME] -key:[YOUR-API-KEY] -instructions:[INSTRUCTIONS] -model:[MODEL] -temp:[TEMPERATURE] -tokens:[MAX-TOKENS] -messages:[MAX-MESSAGES] -session:[SESSION-NAME] -reset -lists -help");
 
             Console.WriteLine("\nOptions:");
-            Console.WriteLine("    -profile:");
+            Console.WriteLine("   key : Sets the API key linked to your OpenAI account.");
+            Console.WriteLine("   assistant : Switches the current assistant. If the assistant doesn't exist, it is created. Default is 'default'.");
+            Console.WriteLine("   instructions : These are the instructions that your assistant will follow for each prompt you send. Default is \"You are a helpful AI assistant. Answer as concisely as possible.\"");
+            Console.WriteLine("   model : Allows you to try out new models in the future, assuming that the chat API will remain the same. Default is 'gpt-3.5-turbo'. ");
+            Console.WriteLine("   temp : Tweaks the temperature. Default is 0.5.");
+            Console.WriteLine("   tokens : Sets the maximum number of tokens allowed for the answer. Default is 1024.");
+            Console.WriteLine("   history : Sets the number of previous messages that should be resent with each prompt. Default is 5.");
+            Console.WriteLine("   session : Creates and/or switch to a new chat session. The default session name is 'default'.");
+            Console.WriteLine("   reset : Sets the current assistant to 'default' and resets its settings. Also sets the session to default and clears its history. ");
+            Console.WriteLine("   lists : Lists all assistants and sessions available. Also lists the current assistant's settings.");
+            Console.WriteLine("   help : Prints information about the command line arguments. ");
 
             Console.WriteLine("\nExamples:");
-            Console.WriteLine(" gpta -profile:\"CSharp\" -key:XYZ-KEY -instructions:\"You are an AI assistant teaching CSharp to a new student.\"");
+            Console.WriteLine("   ./gpta -key:\"YOUR-OPENAI-KEY\" -assistant:\"git expert\" -instructions:\"You are an AI assistant good at solving problems with Git\" -model:gpt-3.5-turbo -temp:0.6 -tokens:1500 -history:4 -session:git -reset -lists -help");
+            Console.WriteLine("   ./gpta -key:\"Your new key\"");
+            Console.WriteLine("   ./gpta -assistant:FrenchTranslator");
+            Console.WriteLine("   ./gpta -instructions:\"You are a French translator. Translate ...\"");
+            Console.WriteLine("   ./gpta -reset");
+            Console.WriteLine("   ./gpta");
 
             Console.WriteLine("\nNote: Your profile and session will persist between instances of gpta. Use the '-lists' option to display the current profile used and session, and the -profile and -session options to change them. ");
 
-            Console.WriteLine("\n\n\n");
+            Console.WriteLine("\n\n");
         }
 
         //-----------------------------------------------
