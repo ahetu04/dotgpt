@@ -1,4 +1,5 @@
 ﻿using dotgpt.OpenAI.Chat;
+using System.Text;
 
 namespace dotgpt.gpta
 {
@@ -9,6 +10,10 @@ namespace dotgpt.gpta
         //-----------------------------------------------
         private static async Task<int> Main(string[] args)
         {
+
+            Console.InputEncoding = Encoding.Unicode;
+            Console.OutputEncoding = Encoding.UTF8;
+
             // load global settings
             dotgpt.GlobalSettings? globalSettings = dotgpt.GlobalSettings.Load();
             if (globalSettings == null)
