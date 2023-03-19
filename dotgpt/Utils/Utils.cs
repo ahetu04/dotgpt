@@ -16,7 +16,7 @@
         {
             if (string.IsNullOrEmpty(ApplicationDataPath))
             {
-                ApplicationDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/gpta/";
+                ApplicationDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "/gpta/";
                 ApplicationDataPath = ApplicationDataPath.Replace("\\", "/");
             }
 
