@@ -114,7 +114,7 @@ namespace dotgpt
             }
 
             // max messages
-            if (settings.PromptHistory >= 1 && settings.PromptHistory < 100)
+            if (settings.PromptHistory >= 0)
             {
                 this.PromptHistory = settings.PromptHistory;
                 bDirty = true;
