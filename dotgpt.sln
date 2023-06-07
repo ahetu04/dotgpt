@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{D19077FC-D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{F0802AA9-22F0-4E24-A161-465F5C4BC6CF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cl-mdt", "cl-mdt\cl-mdt.csproj", "{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54564588-927A-4C27-AD0B-B5A6CB16E60D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +38,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{12FFD3E1-6883-4CAB-8B99-011409030AA0} = {F0802AA9-22F0-4E24-A161-465F5C4BC6CF}
 		{54564588-927A-4C27-AD0B-B5A6CB16E60D} = {D19077FC-D2FF-4ED1-A0C2-42326C842546}
+		{AC01FADB-EBB5-494D-A3DC-84C2ED4E4623} = {D19077FC-D2FF-4ED1-A0C2-42326C842546}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0D8DF0A2-8F04-4366-9219-0AF7EBDC3B94}
