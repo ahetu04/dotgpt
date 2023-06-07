@@ -188,7 +188,29 @@ namespace dotgpt.OpenAI.Chat
 
             // Send request. Only need the header first
             HttpClient httpClient = new HttpClient();
-            HttpResponseMessage result = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            httpClient.Timeout = TimeSpan.FromSeconds(5);
+
+            HttpResponseMessage? result = null;
+           
+            try
+            {
+                result = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+            }
+            catch (Exception e)
+            {
+                if (onError != null)
+                {
+                    onError(e.Message);
+                }
+                return new Message() { role = "Failed", content = e.Message };
+
+            }
+
+            if (result == null)
+            {
+                return new Message() { role = "Failed", content = "" };
+            }
 
             if (!result.IsSuccessStatusCode)
             {
