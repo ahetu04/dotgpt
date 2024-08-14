@@ -9,13 +9,13 @@ namespace dotgpt
     {
         public string Name { get; set; } = "default";
 
-        public string Model { get; set; } = "gpt-3.5-turbo";
+        public string Model { get; set; } = "gpt-4o";
 
         public string Instructions { get; set; } = "You are a helpful AI assistant. Answer as concisely as possible.";
 
         public double Temperature { get; set; } = 0.5;
 
-        public int MaxTokens { get; set; } = 1024;
+        public int MaxTokens { get; set; } = 4096;
 
         public int PromptHistory { get; set; } = 5;
 
