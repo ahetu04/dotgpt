@@ -22,5 +22,20 @@
 
             return ApplicationDataPath;
         }
+
+        public static string RemoveSurroundingQuotes(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            if (input.Length >= 2 &&
+                input[0] == '"' &&
+                input[^1] == '"')
+            {
+                return input.Substring(1, input.Length - 2);
+            }
+
+            return input;
+        }
     }
 }
