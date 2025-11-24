@@ -9,17 +9,11 @@ namespace dotgpt
     {
         public string Name { get; set; } = "default";
 
-        public string Model { get; set; } = "gpt-4o";
+        public string Model { get; set; } = "gpt-5.1";
 
         public string Instructions { get; set; } = "You are a helpful AI assistant. Answer as concisely as possible.";
 
-        public double Temperature { get; set; } = 0.5;
-
-        public int MaxTokens { get; set; } = 4096;
-
-        public int PromptHistory { get; set; } = 5;
-
-        public string APIKey { protected get; set; } = "";
+        public int PromptHistory { get; set; } = 10;
 
         private static string Filename(string profileName)
         {
@@ -69,61 +63,6 @@ namespace dotgpt
         protected Assistant(string name)
         {
             this.Name = name;
-        }
-
-        //-----------------------------------------------
-        // Assistant::UpdateSettings
-        //-----------------------------------------------
-        public void UpdateSettings(Settings settings)
-        {
-            bool bDirty = false;
-
-            // set api key on profile
-            if (!string.IsNullOrEmpty(settings.ApiKey))
-            {
-                this.APIKey = settings.ApiKey;
-                bDirty = true;
-            }
-
-            // model
-            if (!string.IsNullOrEmpty(settings.Model))
-            {
-                this.Model = settings.Model;
-                bDirty = true;
-            }
-
-            // instructions
-            if (!string.IsNullOrEmpty(settings.Instructions))
-            {
-                this.Instructions = settings.Instructions;
-                bDirty = true;
-            }
-
-            // temperature
-            if (settings.Temperature >= 0.0 && settings.Temperature <= 1.0)
-            {
-                this.Temperature = settings.Temperature;
-                bDirty = true;
-            }
-
-            // tokens
-            if (settings.MaxTokens >= 1 && settings.MaxTokens < 32536)
-            {
-                this.MaxTokens = settings.MaxTokens;
-                bDirty = true;
-            }
-
-            // max messages
-            if (settings.PromptHistory >= 0)
-            {
-                this.PromptHistory = settings.PromptHistory;
-                bDirty = true;
-            }
-
-            if (bDirty)
-            {
-                this.Save();
-            }
         }
 
         //-----------------------------------------------

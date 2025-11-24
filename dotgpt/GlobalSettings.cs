@@ -7,7 +7,7 @@ namespace dotgpt
     //-----------------------------------------------
     public class GlobalSettings
     {
-        public string ProfileName { get; set; } = "default";
+        public string AssistantName { get; set; } = "default";
         public string SessionName { get; set; } = "default";
         public string apiKey { get; set; } = "";
 

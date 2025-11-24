@@ -6,6 +6,10 @@ namespace dotgpt.gpta
 {
     internal class CommandLine
     {
+        protected static dotgpt.GlobalSettings? GlobalSettings = null;
+        protected static Assistant? Assistant = null;
+        protected static dotgpt.OpenAI.Chat.Session? Session = null;
+
         //-----------------------------------------------
         // Program::Main
         //-----------------------------------------------
@@ -18,118 +22,69 @@ namespace dotgpt.gpta
                 Console.OutputEncoding = Encoding.Unicode;
             }
 
-            // load global settings
-            dotgpt.GlobalSettings? globalSettings = dotgpt.GlobalSettings.Load();
-            if (globalSettings == null)
+            if (args.Length > 0)
+            {
+                if (args[0] == "-help")
+                {
+                    PrintHelp();
+                }
+            }
+
+            // load/create the global settings
+            GlobalSettings = dotgpt.GlobalSettings.Load();
+            if (GlobalSettings == null)
             {
                 return -1;
-            }
-
-            // load all arguments from command line
-            dotgpt.Assistant.Settings arguments = new dotgpt.Assistant.Settings(args);
-            if (!string.IsNullOrEmpty(arguments.ErrorMsg))
-            {
-                Console.WriteLine(arguments.ErrorMsg);
-                return -1;
-            }
-
-            // show help
-            if (arguments.Help)
-            {
-                PrintHelp();
-                return 0;
-            }
-
-            // update global settings
-            {
-                if (!string.IsNullOrEmpty(arguments.Assistant) && globalSettings.ProfileName != arguments.Assistant)
-                {
-                    globalSettings.ProfileName = arguments.Assistant;
-                    globalSettings.Save();
-                }
-
-                if (!string.IsNullOrEmpty(arguments.Session) && globalSettings.SessionName != arguments.Session)
-                {
-                    globalSettings.SessionName = arguments.Session;
-                    globalSettings.Save();
-                }
-
-                if (!string.IsNullOrEmpty(arguments.ApiKey) && globalSettings.apiKey != arguments.ApiKey)
-                {
-                    globalSettings.apiKey = arguments.ApiKey;
-                    globalSettings.Save();
-                }
             }
 
             // if API key is invalid, request it from the user
-            if (string.IsNullOrEmpty(globalSettings.apiKey))
+            if (string.IsNullOrEmpty(GlobalSettings.apiKey))
             {
-                Console.WriteLine("Please enter your API key: ");
+                Console.WriteLine("Enter your API key (you only need to do this once): ");
                 string? tmp = Console.ReadLine();
 
                 if (!string.IsNullOrEmpty(tmp))
                 {
-                    globalSettings.apiKey = tmp;
+                    GlobalSettings.apiKey = tmp;
                 }
 
-                if (string.IsNullOrEmpty(globalSettings.apiKey))
+                if (string.IsNullOrEmpty(GlobalSettings.apiKey))
                 {
                     Console.WriteLine("Invalid key!");
                     return -1;
                 }
 
-                globalSettings.Save();
+                GlobalSettings.Save();
             }
 
-            if (arguments.Reset)
+            // load/create the assistant
+            Assistant = dotgpt.Assistant.Create(GlobalSettings.AssistantName);
             {
-                new Assistant().Save();
-                new dotgpt.OpenAI.Chat.Session("").Save();
-
-                globalSettings.ProfileName = "default";
-                globalSettings.SessionName = "default";
-
-                globalSettings.Save();
-            }
-
-            // load assistant
-            dotgpt.Assistant? assistant = dotgpt.Assistant.Create(globalSettings.ProfileName);
-            {
-                if (assistant == null)
+                if (Assistant == null)
                 {
                     return -1;
                 }
-
-                assistant.UpdateSettings(arguments);
             }
 
-            // load session
-            dotgpt.OpenAI.Chat.Session? session = null;
+            // load/create the session
             {
-                string sessionName = globalSettings.SessionName;
-                session = dotgpt.OpenAI.Chat.Session.Load(sessionName);
-
-                if (session == null)
-                {
-                    // create new session
-                    session = new dotgpt.OpenAI.Chat.Session(globalSettings.apiKey);
-                }
-
-                // pass parameters from profile to session
-                session.Name = sessionName;
-                session.APIKey = globalSettings.apiKey;
-                session.Model = assistant.Model;
-                session.Instructions = assistant.Instructions;
-                session.Temperature = assistant.Temperature;
-                session.MaxTokens = assistant.MaxTokens;
-                session.PromptHistory = assistant.PromptHistory;
+                SwitchSession(GlobalSettings.SessionName);
             }
 
-            if (arguments.Lists)
+            if (Session == null)
             {
-                ListAllAssistantsAndSessions(assistant, session);
-                return 0;
+                return -1;
             }
+
+            List<string> promptsToQuit = new List<string>()
+            {
+                "quit", 
+                "exit",
+                "q",
+                "/quit", 
+                "/exit",
+                "/q"
+            };
 
             // main loop, back and forth between user and API
             ConsoleColor userColor = Console.ForegroundColor;
@@ -139,9 +94,22 @@ namespace dotgpt.gpta
                 Console.Write("You > ");
                 string? prompt = Console.ReadLine();
 
-                if (prompt == "quit" || prompt == "exit" || prompt == "q")
+                if (prompt == null)
                 {
                     break;
+                }
+
+                // quit?
+                if (promptsToQuit.Contains(prompt))
+                {
+                    break;
+                }
+
+                // command 
+                if (prompt.StartsWith("/"))
+                {
+                    ProcessCommand(prompt);
+                    continue;
                 }
 
                 if (!string.IsNullOrEmpty(prompt))
@@ -162,9 +130,9 @@ namespace dotgpt.gpta
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write($"\nError! {error}");
                     };
-                    dotgpt.OpenAI.Chat.Message m = await session.EnterPrompt(prompt, onRoleChanged, onToken, onError);
+                    dotgpt.OpenAI.Chat.Message m = await Session.EnterPrompt(prompt, onRoleChanged, onToken, onError);
 
-                    session.Save();
+                    Session.Save();
                 }
 
                 Console.WriteLine("\n");
@@ -173,36 +141,248 @@ namespace dotgpt.gpta
             return -1;
         }
 
+
+        //-----------------------------------------------
+        // Program::ProcessCommand
+        //-----------------------------------------------
+        public static void ProcessCommand(string command)
+        {
+
+            if (Assistant == null || Session == null || GlobalSettings == null)
+            {
+                return;
+            }
+
+            if (command == "/status")
+            {
+                ListAllAssistantsAndSessions(Assistant, Session);
+                return;
+            }
+
+            if (command == "/clear")
+            {
+                Session.History.Clear();
+                Session.Save();
+                return;
+            }
+
+            if (command == "/reset")
+            {
+                // create a branch new 'default' assistant and save it
+                Assistant = new Assistant();
+                Assistant.Save();
+
+                // then switch to that assistant
+                SwitchAssistant("default");
+
+                // and switch to the 'default' session
+                SwitchSession("default");
+
+                Session.History.Clear();
+                Session.Save();
+
+                return;
+            }
+
+            if (command == "/help")
+            {
+                PrintHelp();
+                return;
+            }
+
+            string[] splitCommand = command.Split(" ", 2);
+            if (splitCommand.Length != 2)
+            {
+                Console.WriteLine("Invalid command");
+                return;
+            }
+
+            switch (splitCommand[0])
+            {
+                case "/key":
+                {
+                    GlobalSettings.apiKey = splitCommand[1];
+                    GlobalSettings.Save();
+
+                    Session.APIKey = splitCommand[1];
+                    Session.Save();
+
+                    break;
+                }
+
+                case "/m":
+                case "/model":
+                {
+                    string modelName = splitCommand[1];
+                    Assistant.Model = modelName;
+                    Assistant.Save();
+
+                    Session.Model = modelName;
+                    Session.Save();
+
+                    break;
+                }
+
+                case "/a":
+                case "/assistant":
+                {
+                    string assistantName = splitCommand[1];
+                    SwitchAssistant(assistantName);
+                    break;
+                }
+
+                case "/h":
+                case "/history":
+                {
+                    int historySize = 0;
+                    if (int.TryParse(splitCommand[1], out historySize))
+                    {
+                        Assistant.PromptHistory = historySize;
+                        Assistant.Save();
+
+                        Session.PromptHistory = historySize;
+                        Session.Save();
+                    }
+                    break;
+                }
+
+                case "/i":
+                case "/instruction":
+                case "/instructions":
+                {
+                    string instructions = splitCommand[1];
+                    instructions = Utils.RemoveSurroundingQuotes(instructions);
+
+                    Assistant.Instructions = instructions;
+                    Assistant.Save();
+
+                    Session.Instructions = instructions;
+                    Session.Save();
+
+                    break;
+                }
+
+                case "/s":
+                case "/session":
+                {
+                    SwitchSession(splitCommand[1]);
+
+                    GlobalSettings.SessionName = splitCommand[1];
+                    GlobalSettings.Save();
+                    break;
+                }
+
+                default:
+                {
+                    Console.WriteLine($"Unknown command '{splitCommand[0]}'");
+                    break;
+                }
+            }
+
+        }
+
+
+        //-----------------------------------------------
+        // Program::SwitchSession
+        //-----------------------------------------------
+        protected static void SwitchSession(string InSessionName)
+        {
+            // session expects GlobalSettings and an Assistant to be loaded
+            if (GlobalSettings == null || Assistant == null)
+            {
+                return;
+            }
+
+            // validate session name
+
+
+            dotgpt.OpenAI.Chat.Session? newSession = null;
+            {
+                newSession = dotgpt.OpenAI.Chat.Session.Load(InSessionName);
+
+                if (newSession == null)
+                {
+                    // create new session
+                    newSession = new dotgpt.OpenAI.Chat.Session(GlobalSettings.apiKey);
+                }
+
+                // pass parameters from profile to session
+                newSession.Name = InSessionName;
+                newSession.APIKey = GlobalSettings.apiKey;
+                newSession.Model = Assistant.Model;
+                newSession.Instructions = Assistant.Instructions;
+                newSession.PromptHistory = Assistant.PromptHistory;
+
+                Session = newSession;
+                Session.Save();
+            }
+
+            if (GlobalSettings != null)
+            {
+                // update global settings
+                GlobalSettings.SessionName = InSessionName;
+                GlobalSettings.Save();
+            }
+        }
+
+        //-----------------------------------------------
+        // Program::SwitchAssistant
+        //-----------------------------------------------
+        protected static void SwitchAssistant(string InAssistantName)
+        {
+
+            Assistant? newAssistant = dotgpt.Assistant.Create(InAssistantName);
+
+            if (newAssistant == null)
+            {
+                return;
+            }
+
+            Assistant = newAssistant;
+
+            // update the session to use the assistant
+            if (Session != null)
+            {
+
+                // update the session
+                Session.Model = Assistant.Model;
+                Session.Instructions = Assistant.Instructions;
+                Session.PromptHistory = Assistant.PromptHistory;
+                Session.Save();
+
+            }
+
+            // update global settings 
+            if (GlobalSettings != null)
+            {
+                // update global settings
+                GlobalSettings.AssistantName = InAssistantName;
+                GlobalSettings.Save();
+            }
+        }
+
         //-----------------------------------------------
         // Program::PrintHelp
         //-----------------------------------------------
         public static void PrintHelp()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("gpta -profile:[PROFILE-NAME] -key:[YOUR-API-KEY] -instructions:[INSTRUCTIONS] -model:[MODEL] -temp:[TEMPERATURE] -tokens:[MAX-TOKENS] -messages:[MAX-MESSAGES] -session:[SESSION-NAME] -reset -lists -help");
+            Console.WriteLine("./gpta");
 
-            Console.WriteLine("\nOptions:");
-            Console.WriteLine("   key : Sets the API key linked to your OpenAI account.");
-            Console.WriteLine("   assistant : Switches the current assistant. If the assistant doesn't exist, it is created. Default is 'default'.");
-            Console.WriteLine("   instructions : These are the instructions that your assistant will follow for each prompt you send. Default is \"You are a helpful AI assistant. Answer as concisely as possible.\"");
-            Console.WriteLine("   model : Allows you to try out new models in the future, assuming that the chat API will remain the same. Default is 'gpt-3.5-turbo'. ");
-            Console.WriteLine("   temp : Tweaks the temperature. Default is 0.5.");
-            Console.WriteLine("   tokens : Sets the maximum number of tokens allowed for the answer. Default is 1024.");
-            Console.WriteLine("   history : Sets the number of previous messages that should be resent with each prompt. Default is 5.");
-            Console.WriteLine("   session : Creates and/or switch to a new chat session. The default session name is 'default'.");
-            Console.WriteLine("   reset : Sets the current assistant to 'default' and resets its settings. Also sets the session to default and clears its history. ");
-            Console.WriteLine("   lists : Lists all assistants and sessions available. Also lists the current assistant's settings.");
-            Console.WriteLine("   help : Prints information about the command line arguments. ");
+            Console.WriteLine("\nOptions: While in the console app");
+            Console.WriteLine("   /key [OPENAI_API_KEY]: Sets the API key linked to your OpenAI account.");
+            Console.WriteLine("   /assistant [assistant name]: Switches the current assistant. If the assistant doesn't exist, it is created. Default is 'default'.");
+            Console.WriteLine("   /session : Creates and/or switch to a new chat session. The default session name is 'default'.");
+            Console.WriteLine("   /instructions [instructions]: Assigns new instructions to the current assistant. Default is \"You are a helpful AI assistant. Answer as concisely as possible.\"");
+            Console.WriteLine("   /model [model name]: Changes the model used by the current assistant.");
+            Console.WriteLine("   /history : Sets how many messages from the current session are sent alongside each new prompt by the assistant. This setting is saved in the assistant. Default is 10.");
+            Console.WriteLine("   /clear : Clears the current session's history");
+            Console.WriteLine("   /reset : Sets the current assistant to 'default' and resets its settings. Also sets the session to 'default' and clears its history. ");
+            Console.WriteLine("   /status : Lists all assistants and sessions availableas well as the current assistant's settings.");
+            Console.WriteLine("   /help : Prints this ");
+            Console.WriteLine("   /q /quit /exit : Quits");
 
-            Console.WriteLine("\nExamples:");
-            Console.WriteLine("   ./gpta -key:\"YOUR-OPENAI-KEY\" -assistant:\"git expert\" -instructions:\"You are an AI assistant good at solving problems with Git\" -model:gpt-3.5-turbo -temp:0.6 -tokens:1500 -history:4 -session:git -reset -lists -help");
-            Console.WriteLine("   ./gpta -key:\"Your new key\"");
-            Console.WriteLine("   ./gpta -assistant:FrenchTranslator");
-            Console.WriteLine("   ./gpta -instructions:\"You are a French translator. Translate ...\"");
-            Console.WriteLine("   ./gpta -reset");
-            Console.WriteLine("   ./gpta");
-
-            Console.WriteLine("\nNote: Your profile and session will persist between instances of gpta. Use the '-lists' option to display the current profile used and session, and the -profile and -session options to change them. ");
+            Console.WriteLine("\nNote: Your profile and session will persist between instances of gpta. Use the '/status' option to display the current assistant and session used.");
 
             Console.WriteLine("\n\n");
         }
@@ -282,7 +462,7 @@ namespace dotgpt.gpta
 
             Console.WriteLine("");
             Console.WriteLine($"Current assistant: ");
-            Console.WriteLine($"\tName: {currentAssistant.Name}\n\tModel: {currentAssistant.Model}\n\tInstructions: {currentAssistant.Instructions}\n\tTemperature: {currentAssistant.Temperature}\n\tMaxTokens: {currentAssistant.MaxTokens}\n\tPromptHistory: {currentAssistant.PromptHistory}");
+            Console.WriteLine($"\tName: {currentAssistant.Name}\n\tModel: {currentAssistant.Model}\n\tInstructions: {currentAssistant.Instructions}\n\tPromptHistory: {currentAssistant.PromptHistory}");
             Console.WriteLine($"\nCurrent session: \n\tName: {currentSession.Name}\n\tHistory size: {currentSession.History.Count}");
 
             Console.WriteLine();

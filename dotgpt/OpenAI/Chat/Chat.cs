@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Data;
+using System.Text.Json;
 
 namespace dotgpt.OpenAI.Chat
 {
@@ -49,13 +50,11 @@ namespace dotgpt.OpenAI.Chat
 
         public string Instructions { protected get; set; } = "You are a helpful AI assistant. Answer as concisely as possible.";
 
-        public double Temperature { protected get; set; } = 0.5;
+        public string Model { protected get; set; } = "gpt-5.1";
 
-        public int MaxTokens { protected get; set; } = 1024;
+        public int PromptHistory { protected get; set; } = 10;
 
-        public string Model { protected get; set; } = "gpt-3.5-turbo";
-
-        public int PromptHistory { protected get; set; } = 5;
+        public int Timeout { protected get; set; } = 30;
 
         //-----------------------------------------------
         // Session::Session
@@ -150,10 +149,33 @@ namespace dotgpt.OpenAI.Chat
                 promptMessages.Add(new Message() { role = "user", content = prompt });
             }
 
-            // Send a request to the chat completions endpoint to generate the completion asynchronously
+            // Create a request for the chat completions endpoint. Ask to generate the completion asynchronously
             HttpRequestMessage? request = null;
             try
             {
+
+                List<string> models = new List<string>()
+                { 
+                    "gpt-4", 
+                    "gpt-4.1", 
+                    "gpt-4.1-nano", 
+                    "gpt-4.1-mini", 
+                    "gpt-4o",
+                    "gpt-4o-mini",
+                    "gpt-5",
+                    "gpt-5-nano",
+                    "gpt-5.1",
+                    "gpt-5.1-chat-latest"
+                };
+
+                string requestContent = JsonSerializer.Serialize(new
+                {
+                    model = this.Model, 
+                    messages = promptMessages.ToArray(),
+                    stream = true
+                });
+
+
                 request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Post,
@@ -162,15 +184,7 @@ namespace dotgpt.OpenAI.Chat
                     {
                         { "Authorization", $"Bearer {this.APIKey}" }
                     },
-                    Content = new StringContent(JsonSerializer.Serialize(new
-                    {
-                        model = this.Model,
-                        messages = promptMessages.ToArray(),
-                        max_tokens = this.MaxTokens,
-                        temperature = this.Temperature,
-                        stream = true
-                    }),
-                    System.Text.Encoding.UTF8, "application/json")
+                    Content = new StringContent(requestContent, System.Text.Encoding.UTF8, "application/json")
                 };
             }
             catch (Exception e)
@@ -183,19 +197,18 @@ namespace dotgpt.OpenAI.Chat
                 return new Message() { role = "Exception", content = e.Message };
             }
 
-            // response will come in in the form of a header + subsequent events (Server Side Events)
+            // Response arrives as an initial header followed by subsequent Server-Sent Events
             request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
 
             // Send request. Only need the header first
             HttpClient httpClient = new HttpClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(5);
+            httpClient.Timeout = TimeSpan.FromSeconds(this.Timeout);
 
             HttpResponseMessage? result = null;
            
             try
             {
                 result = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-
             }
             catch (Exception e)
             {
@@ -204,7 +217,6 @@ namespace dotgpt.OpenAI.Chat
                     onError(e.Message);
                 }
                 return new Message() { role = "Failed", content = e.Message };
-
             }
 
             if (result == null)
@@ -221,8 +233,7 @@ namespace dotgpt.OpenAI.Chat
                 return new Message() { role = "Failed", content = result.ReasonPhrase != null ? result.ReasonPhrase : "" };
             }
 
-            // we got a header, now wait for a stream of server events. Roles and tokens will be
-            // received individually.
+            // The header was received; now waiting for the server-sent event stream. Roles and tokens will arrive as separate events.
             using (var stream = await result.Content.ReadAsStreamAsync())
             {
                 using (var reader = new StreamReader(stream))
@@ -262,13 +273,13 @@ namespace dotgpt.OpenAI.Chat
                                     continue;
                                 }
 
-                                // switch role?
+                                // switch role
                                 if (msg.role != null && onRoleChanged != null)
                                 {
                                     onRoleChanged(msg.role);
                                 }
 
-                                // new token?
+                                // add new token
                                 if (msg.content != null && onToken != null)
                                 {
                                     onToken(msg.content);
