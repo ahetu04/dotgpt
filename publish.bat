@@ -1,0 +1,1 @@
+dotnet publish cl-gpta -c Release -o ./publish
