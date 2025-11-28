@@ -1,67 +1,83 @@
 # `gpta`
 
-Is a ChatGPT-style assistant that can be easily accessed from the terminal. Users have the option to either use the default assistant or configure their own. Assistants and sessions are persistent to ensure continuity between uses. 
+`gpta` is a .NET 8 console app that gives you a fast, streaming ChatGPT-style assistant directly in your terminal. You launch the binary once, type prompts conversationally, and steer the conversation with lightweight slash commands. Assistants, sessions, settings, and chat transcripts live under `%LOCALAPPDATA%/gpta`, so you can pick up where you left off every time you reopen the app.
 
-While `gpta` communicates with OpenAI's chat API, all assistants and chat sessions are kept exclusively on the user's computer. `gpta` will prompt you to enter a valid OpenAI API key once.
+## Key features
+- **Streaming replies** – tokens arrive as soon as OpenAI sends them, so you can read answers while they are being generated.
+- **Persistent assistants** – each assistant remembers its model, instructions, and history window; `/assistant <name>` swaps between them instantly.
+- **Session management** – `/session <name>` keeps parallel conversations, and `/clear` or `/reset` let you start fresh.
+- **Markdown export** – `/savemd <file>` writes the current session to `%LOCALAPPDATA%/gpta/Saved/<file>.md`.
+- **Local-only state** – API keys, assistants, sessions, and saved chats never leave your machine; the only network call is the OpenAI Chat Completions request.
 
-Simply put, with `gpta` you can easily access and use ChatGPT without any hassle. 
+## Build & run
+```pwsh
+dotnet restore
+dotnet run --project cl-gpta        # launches the interactive prompt
 
-## command line arguments
-Arguments are all optional. Their uses range from setting a new API key to creating and modifying assistant profiles.  
-- `key` : Sets the API key linked to your OpenAI account.
-- `assistant` : Switches the current assistant. If the assistant doesn't exist, it is created. Default is 'default'.
-- `instructions` : These are the instructions that your assistant will follow for each prompt you send. Default is "You are a helpful AI assistant. Answer as concisely as possible.".
-- `model` : Allows you to try out new models in the future, assuming that the chat API will remain the same. Default is 'gpt-3.5-turbo'. 
-- `temp` : Tweaks the temperature. Default is 0.5.
-- `tokens` : Sets the maximum number of tokens allowed for the answer. Default is 1024.
-- `history` : Sets the number of previous messages that should be resent with each prompt. Default is 5.
-- `session` : Creates and/or switch to a new chat session. The default session name is 'default'.
-- `reset` : Sets the current assistant to 'default' and resets its settings. Also sets the session to default and clears its history. 
-- `lists` : Lists all assistants and sessions available. Also lists the current assistant's settings.
-- `help` : Prints information about the command line arguments. 
-
-Example:
-
-    ./gpta -key:"YOUR-OPENAI-KEY" -assistant:"git expert" -instructions:"You are an AI assistant good at solving problems with Git" -model:gpt-3.5-turbo -temp:0.6 -tokens:1500 -history:4 -session:git -reset -lists -help
-    
-    To change your API key:
-    ./gpta -key:"Your new key"
-    
-    To change assistant:
-    ./gpta -assistant:FrenchTranslator
-
-    To change the instructions for the current assistant:
-    ./gpta -instructions:"You are a French translator. Translate ..."
-
-    To switch back to a default assistant and a fresh session:
-    ./gpta -reset
-
-    To continue where you left off before:
-    ./gpta
-
-When in the prompt, type 'exit', 'quit' or 'q' to leave.  
-
-# `dotgpt.OpenAI.Chat.Session`
-This is a straightforward C# class that facilitates communication with Open AI's chat completion API. The class leverages an event stream to efficiently receive tokens as they get generated.
-
-## How to use in your code
-```CSharp
-    string apiKey = "{YOUR-API-KEY}";
-    dotgpt.OpenAI.Chat.Session session = new dotgpt.OpenAI.Chat.Session(apiKey)
-    {
-        PromptHistory = 5,
-        Instructions = "You're an AI assistant capable of providing detailed answers to technical questions. ",
-        MaxTokens = 1024
-    };
-
-    string prompt = "What's a detached HEAD in git?";
-
-    var onRoleChanged = (string role) => { Console.Write($"\n{role}:\n"); };
-    var onToken = (string token) => { Console.Write(token); };
-    dotgpt.OpenAI.Chat.Message m = await session.EnterPrompt(prompt, onRoleChanged, onToken);
-
+# or publish a standalone build (example: win-x64)
+dotnet publish cl-gpta -c Release -r win-x64 --self-contained false
 ```
 
-# `OpenAI API key`
-To access the OpenAI Chat API you'll need an API key linked to a OpenAI paid account. Visit https://platform.openai.com/account/api-keys to 
-generate/obtain your API key(s). 
+On first launch, `gpta` prompts you for an OpenAI API key (a paid account key from https://platform.openai.com/account/api-keys). The key is cached in `%LOCALAPPDATA%/gpta/settings.json`, and you can rotate it later with `/key <new-key>`.
+
+## Interactive workflow
+1. Start the app (`gpta` after publishing, or `dotnet run --project cl-gpta` while developing).
+2. Type prompts normally. Replies stream back with colored role prefixes.
+3. Use slash commands whenever you need to configure the assistant or session (listed below).
+4. Type `exit`, `quit`, or `q` (with or without a leading `/`) to leave the prompt.
+
+### Slash commands
+
+| Command | Description |
+|---------|-------------|
+| `/key <api-key>` | Updates the stored OpenAI API key and applies it to the current session. |
+| `/assistant <name>` | Switches (or creates) an assistant profile with its own instructions, model, and history length. |
+| `/session <name>` | Loads or creates a chat session so you can maintain multiple ongoing conversations. |
+| `/instructions "<text>"` | Replaces the system prompt for the active assistant/session. Quotes are optional; use them for multi-line text. |
+| `/model <model-name>` | Sets the OpenAI Chat Completions model (defaults to `gpt-5.1`). |
+| `/history <n>` | Controls how many previous messages accompany each new prompt (per assistant). |
+| `/clear` | Empties the current session’s chat history. |
+| `/reset` | Reverts to the default assistant and session and wipes their history. |
+| `/status` | Lists every assistant/session stored under `%LOCALAPPDATA%/gpta`, highlighting the active pair. |
+| `/savemd <filename>` | Exports the current session to Markdown under `%LOCALAPPDATA%/gpta/Saved/`. |
+| `/help` | Prints an in-app summary of the available commands. |
+
+Any other input is treated as a prompt. Commands are only recognized when the line starts with `/`.
+
+## Storage layout
+
+```
+%LOCALAPPDATA%/gpta/
+|-- settings.json              # global API key + default assistant/session names
+|-- Assistants/<name>.json     # serialized assistant profiles
+|-- Sessions/<name>.json       # serialized chat history for each session
+`-- Saved/<export>.md          # optional Markdown exports created via /savemd
+```
+
+Deleting any of these files is safe; they will be recreated on demand. Keep in mind that history and instructions live with their respective assistant or session files.
+
+## `dotgpt.OpenAI.Chat.Session`
+
+The `dotgpt` class library ships with a reusable `dotgpt.OpenAI.Chat.Session` type that handles history management, streaming responses, and persistence. `cl-gpta` uses it directly, but you can also drop it into your own .NET projects.
+
+```csharp
+string apiKey = "{YOUR-API-KEY}";
+var session = new dotgpt.OpenAI.Chat.Session(apiKey)
+{
+    Name = "scratch",
+    Instructions = "You are an AI assistant who answers concisely.",
+    Model = "gpt-5.1",
+    PromptHistory = 5,
+};
+
+var onRoleChanged = (string role) => Console.Write($"\n{role} > ");
+var onToken = (string token) => Console.Write(token);
+var onError = (string error) => Console.WriteLine($"\nError: {error}");
+
+await session.EnterPrompt("What's a detached HEAD in git?", onRoleChanged, onToken, onError);
+session.Save();   // persists under %LOCALAPPDATA%/gpta/Sessions/
+```
+
+## OpenAI API key reminder
+
+You need an API key tied to a paid OpenAI account to talk to the Chat Completions API. Create or manage keys at https://platform.openai.com/account/api-keys, then provide the key to `gpta` when prompted or via `/key <value>`.

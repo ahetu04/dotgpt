@@ -408,24 +408,25 @@ namespace dotgpt.gpta
         public static void PrintHelp()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("./gpta");
+            Console.WriteLine("  gpta                          # after publishing");
+            Console.WriteLine("  dotnet run --project cl-gpta  # while developing\n");
 
-            Console.WriteLine("\nOptions: While in the console app");
-            Console.WriteLine("   /key [OPENAI_API_KEY]: Sets the API key linked to your OpenAI account.");
-            Console.WriteLine("   /assistant [assistant name]: Switches the current assistant. If the assistant doesn't exist, it is created. Default is 'default'.");
-            Console.WriteLine("   /session : Creates and/or switch to a new chat session. The default session name is 'default'.");
-            Console.WriteLine("   /instructions [instructions]: Assigns new instructions to the current assistant. Default is \"You are a helpful AI assistant. Answer as concisely as possible.\"");
-            Console.WriteLine("   /model [model name]: Changes the model used by the current assistant.");
-            Console.WriteLine("   /history : Sets how many messages from the current session are sent alongside each new prompt by the assistant. This setting is saved in the assistant. Default is 10.");
-            Console.WriteLine("   /clear : Clears the current session's history");
-            Console.WriteLine("   /reset : Sets the current assistant to 'default' and resets its settings. Also sets the session to 'default' and clears its history. ");
-            Console.WriteLine("   /status : Lists all assistants and sessions availableas well as the current assistant's settings.");
-            Console.WriteLine("   /help : Prints this ");
-            Console.WriteLine("   /q /quit /exit : Quits");
+            Console.WriteLine("Slash commands (enter at the prompt):");
+            Console.WriteLine("  /key <api-key>          Updates the stored OpenAI API key.");
+            Console.WriteLine("  /assistant <name>       Switches or creates an assistant profile (model/instructions/history).");
+            Console.WriteLine("  /session <name>         Loads or creates a chat session so you can keep parallel threads.");
+            Console.WriteLine("  /instructions <text>    Sets the system prompt for the active assistant/session.");
+            Console.WriteLine("  /model <model-name>     Changes the OpenAI chat model (default: gpt-5.1).");
+            Console.WriteLine("  /history <n>            Decides how many previous turns are resent with each prompt.");
+            Console.WriteLine("  /clear                  Wipes the current session history.");
+            Console.WriteLine("  /reset                  Returns to the default assistant/session and clears their history.");
+            Console.WriteLine("  /status                 Lists all assistants/sessions under %LOCALAPPDATA%/gpta.");
+            Console.WriteLine("  /savemd <filename>      Exports the current session to Saved/<filename>.md.");
+            Console.WriteLine("  /help                   Prints this overview.");
+            Console.WriteLine("  /q /quit /exit          Leaves the prompt.");
 
-            Console.WriteLine("\nNote: Your profile and session will persist between instances of gpta. Use the '/status' option to display the current assistant and session used.");
-
-            Console.WriteLine("\n\n");
+            Console.WriteLine("\nAssistants, sessions, and settings are saved under %LOCALAPPDATA%/gpta so you can continue where you left off next time.");
+            Console.WriteLine("When you're done, just type 'quit', 'exit', or 'q'.\n");
         }
 
         //-----------------------------------------------
