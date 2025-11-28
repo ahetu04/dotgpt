@@ -1,4 +1,5 @@
 ﻿using dotgpt.OpenAI.Chat;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -108,7 +109,14 @@ namespace dotgpt.gpta
                 // command 
                 if (prompt.StartsWith("/"))
                 {
-                    ProcessCommand(prompt);
+                    try
+                    {
+                        ProcessCommand(prompt);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                     continue;
                 }
 
@@ -272,6 +280,12 @@ namespace dotgpt.gpta
                     break;
                 }
 
+                case "/savemd":
+                {
+                    SaveMarkdown(splitCommand[1]);
+                    break;
+                }
+
                 default:
                 {
                     Console.WriteLine($"Unknown command '{splitCommand[0]}'");
@@ -279,6 +293,33 @@ namespace dotgpt.gpta
                 }
             }
 
+        }
+
+        //-----------------------------------------------
+        // Program::SaveMarkdown
+        //-----------------------------------------------
+        protected static void SaveMarkdown(string InSavename)
+        {
+            if (Session == null)
+            {
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+
+            foreach (Message m in Session.History)
+            {
+                sb.AppendLine($"## `{m.role}`\n");
+                sb.AppendLine($"{m.content}\n\n");
+            }
+
+            string savePath = $"{dotgpt.Utils.GetApplicationDataPath()}/Saved";
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+
+            File.WriteAllText($"{savePath}/{InSavename}.md", sb.ToString());
         }
 
 
